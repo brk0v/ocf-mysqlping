@@ -11,7 +11,7 @@ Useful in Master-Master Mysql cluster HA for grouping Mysql VIP with working Mys
 | Mysql Master |<--
 |______________|
 
-Resource used `mysqladmin ping` command.
+Resource uses `mysqladmin ping` command.
 
 == Example ==
 
