@@ -1,0 +1,14 @@
+Pacemaker OCF cluster resource that pings mysql nodes
+
+Usefull in Master-Master Mysql cluster HA
+ ______________
+|  Mysql VIP   |
+| Mysql Master |
+|______________|
+ _______|______
+|              |
+| Mysql Master |
+|______________|
+
+
+Resource used `mysqadmin ping` command.
