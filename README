@@ -1,14 +1,46 @@
 Pacemaker OCF cluster resource that pings mysql nodes
 
-Usefull in Master-Master Mysql cluster HA
- ______________
-|  Mysql VIP   |
-| Mysql Master |
-|______________|
- _______|______
-|              |
-| Mysql Master |
-|______________|
+Same as ping or pingd  OCF resources
 
+Usefull in Master-Master Mysql cluster HA for grouping Mysql VIP with working Mysql Server
+ ______________
+|              |
+| Mysql Master |---
+|______________|   | 
+ ___ | _ | ____    | Mysql VIP (moving on Mysql crushes, or other reason)
+|              |   |
+| Mysql Master |<--
+|______________|
 
 Resource used `mysqadmin ping` command.
+
+== Example ==
+
+= Install resource managment script
+
+cd /usr/lib/ocf/resource.d
+mkdir mysql; cd mage
+wget mysqlping # get resource
+chmod +x ./mysqlping
+
+= Configure mysqlping resource
+
+crm configure
+primitive P_MYSQLPING ocf:mysql:mysqlping params dampen=7s host_list="localhost" user="cacti" password="password multiplier=222 timeout="20" op monitor interval=5s timeout="30s"
+clone CL_MYSQLPING P_MYSQLPING meta globally-unique="false"
+location L_MYSQLPING_01 CL_MYSQLPING 100: first_master_node
+location L_MYSQLPING_02 CL_MYSQLPING 100: second_master_node
+property default-resource-stickiness=100
+commit
+
+= Configure default location for the Mysql VIP
+crm configure
+primitive P_MYSQL_IP ocf:heartbeat:IPaddr2 params ip="192.168.56.163" nic="eth0" op monitor interval="5s"
+location L_MYSQL_IP_01 P_MYSQL_IP 100: first_master_node
+location L_MYSQL_IP_02 P_MYSQL_IP 10: second_master_node
+commit
+
+= Configure VIP for mysqlping
+crm configure
+location L_MYSQLPING_IP P_MYSQL_IP rule mysqlping: defined mysqlping
+commit
