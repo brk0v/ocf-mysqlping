@@ -1,8 +1,7 @@
 Pacemaker OCF cluster resource that pings mysql nodes
-
 Same as ping or pingd  OCF resources
 
-Usefull in Master-Master Mysql cluster HA for grouping Mysql VIP with working Mysql Server
+Useful in Master-Master Mysql cluster HA for grouping Mysql VIP with working Mysql Server
  ______________
 |              |
 | Mysql Master |---
@@ -12,11 +11,13 @@ Usefull in Master-Master Mysql cluster HA for grouping Mysql VIP with working My
 | Mysql Master |<--
 |______________|
 
-Resource used `mysqadmin ping` command.
+Resource used `mysqladmin ping` command.
 
 == Example ==
 
-= Install resource managment script
+We  have 2 node cluster with master-master replication. It was setuped like clone resource. So we can't use group or collocation for grouping VIP with working instant. 
+
+= Install resource management script
 
 cd /usr/lib/ocf/resource.d
 mkdir mysql; cd mage
@@ -34,6 +35,7 @@ property default-resource-stickiness=100
 commit
 
 = Configure default location for the Mysql VIP
+
 crm configure
 primitive P_MYSQL_IP ocf:heartbeat:IPaddr2 params ip="192.168.56.163" nic="eth0" op monitor interval="5s"
 location L_MYSQL_IP_01 P_MYSQL_IP 100: first_master_node
@@ -41,6 +43,7 @@ location L_MYSQL_IP_02 P_MYSQL_IP 10: second_master_node
 commit
 
 = Configure VIP for mysqlping
+
 crm configure
 location L_MYSQLPING_IP P_MYSQL_IP rule mysqlping: defined mysqlping
 commit
