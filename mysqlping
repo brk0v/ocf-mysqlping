@@ -29,7 +29,8 @@
 #######################################################################
 # Initialization:
 
-. ${OCF_ROOT}/resource.d/heartbeat/.ocf-shellfuncs
+: ${OCF_FUNCTIONS_DIR=${OCF_ROOT}/lib/heartbeat}
+. ${OCF_FUNCTIONS_DIR}/ocf-shellfuncs
 
 #######################################################################
 
@@ -37,7 +38,7 @@ meta_data() {
 	cat <<END
 <?xml version="1.0"?>
 <!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
-<resource-agent name="ping">
+<resource-agent name="mysqlping">
 <version>1.0</version>
 
 <longdesc lang="en">
@@ -48,7 +49,7 @@ It is essentially the same as ping except that it use Mysql the system ping tool
 
 <parameters>
 
-<parameter name="pidfile" unique="0">
+<parameter name="pidfile" unique="1">
 <longdesc lang="en">PID file</longdesc>
 <shortdesc lang="en">PID file</shortdesc>
 <content type="string" default="$HA_VARRUN/mysqlping-${OCF_RESOURCE_INSTANCE}" />
@@ -62,7 +63,7 @@ The time to wait (dampening) further changes occur
 <content type="integer" default="5s"/>
 </parameter>
 
-<parameter name="name" unique="0">
+<parameter name="name" unique="1">
 <longdesc lang="en">
 The name of the attributes to set.  This is the name to be used in the constraints.
 </longdesc>
@@ -80,7 +81,7 @@ The number by which to multiply the number of connected ping nodes by
 
 <parameter name="host_list" unique="0">
 <longdesc lang="en">
-The list of Mysql ping nodes to count.  Defaults to all configured Mysql ping nodes. Rarely needs to be specified.
+The list of Mysql nodes to ping. Haven't yet implemented. Pings only localhost. 
 </longdesc>
 <shortdesc lang="en">Mysql host list</shortdesc>
 <content type="string" default="localhost"/>
@@ -158,10 +159,7 @@ END
 }
 
 mysqlping_start() {
-    mysqlping_monitor
-    if [ $? =  $OCF_SUCCESS ]; then
-	return $OCF_SUCCESS
-    fi
+    mysqlping_monitor && return $OCF_SUCCESS
     touch ${OCF_RESKEY_pidfile}
     mysqlping_update
 }
