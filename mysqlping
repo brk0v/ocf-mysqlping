@@ -1,29 +1,15 @@
 #!/bin/sh
 #
+# MysqlPing
 #
-#	mysqlping OCF RA that utilizes the mysqladmin 
+# Description:  mysqlping OCF RA that utilizes the mysqladmin for pinging and check availiability of MySQL server
 #
-# Copyright (c) 2011 Viacheslav Biriukov, Andrew Beekhof
-#                    All Rights Reserved.
+# Authors:      Viacheslav Biriukov, Andrew Beekhof
+# 
 #
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of version 2 of the GNU General Public License as
-# published by the Free Software Foundation.
+# Support:      v.v.biriukov@gmail.com
+# License:      Apache Software License (ASL) 2.0
 #
-# This program is distributed in the hope that it would be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-#
-# Further, this software is distributed without any warranty that it is
-# free of the rightful claim of any third person regarding infringement
-# or the like.  Any license provided herein, whether implied or
-# otherwise, applies only to this software file.  Patent licenses, if
-# any, provided herein do not apply to combinations of this program with
-# other software, or any other product whatsoever.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write the Free Software Foundation,
-# Inc., 59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
 #
 
 #######################################################################
@@ -42,8 +28,8 @@ meta_data() {
 <version>1.0</version>
 
 <longdesc lang="en">
-Every time the monitor action is run, this resource agent records (in the CIB) the current number of ping Mysql nodes the host can connect to.
-It is essentially the same as ping except that it use Mysql the system ping tool to obtain the results.
+Every time the monitor action is run, this resource agent records (in the CIB) the current number of ping MySQL nodes the host can connect to.
+It is essentially the same as ping except that it use MySQL the system ping tool to obtain the results.
 </longdesc>
 <shortdesc lang="en">node connectivity</shortdesc>
 
@@ -146,7 +132,7 @@ END
 mysqlping_conditional_log() {
     level=$1; shift 
     if [ ${OCF_RESKEY_debug} = "true" ]; then
-	ocf_log $level "$*"
+	   ocf_log $level "$*"
     fi
 }
 
@@ -175,9 +161,8 @@ mysqlping_stop() {
 
 mysqlping_monitor() {
     if [ -f ${OCF_RESKEY_pidfile} ]; then
-	mysqlping_update
-	
-	return $OCF_SUCCESS
+	   mysqlping_update
+	   return $OCF_SUCCESS
     fi
     return $OCF_NOT_RUNNING
 }
@@ -188,29 +173,30 @@ mysqlping_validate() {
     state_dir=`dirname "$OCF_RESKEY_pidfile"`
     touch "$state_dir/$$"
     if [ $? != 0 ]; then
-	ocf_log err "Invalid location for 'state': $state_dir is not writable"
-	return $OCF_ERR_ARGS
+	   ocf_log err "Invalid location for 'state': $state_dir is not writable"
+	   return $OCF_ERR_ARGS
     fi
+    
     rm "$state_dir/$$"
 
-# Pidfile better be an absolute path
+    # Pidfile better be an absolute path
     case $OCF_RESKEY_pidfile in
-	/*) ;;
-	*) ocf_log warn "You should use an absolute path for pidfile not: $OCF_RESKEY_pidfile" ;;
+	   /*) ;;
+	   *) ocf_log warn "You should use an absolute path for pidfile not: $OCF_RESKEY_pidfile" ;;
     esac
     
-# Check the mysqlping interval
+    # Check the mysqlping interval
     if ocf_is_decimal "$OCF_RESKEY_CRM_meta_interval" && [ $OCF_RESKEY_CRM_meta_interval -gt 0 ]; then
-	:
+	   :
     else
-	ocf_log err "Invalid mysqlping interval $OCF_RESKEY_interval. It should be positive integer!"
-	exit $OCF_ERR_CONFIGURED
+	   ocf_log err "Invalid mysqlping interval $OCF_RESKEY_interval. It should be positive integer!"
+	   exit $OCF_ERR_CONFIGURED
     fi
 
-# Check the host list
+    # Check the host list
     if [ "x" = "x$OCF_RESKEY_host_list" ]; then 
-	ocf_log err "Empty host_list.  Please specify some nodes to mysqlping"
-	exit $OCF_ERR_CONFIGURED
+	   ocf_log err "Empty host_list.  Please specify some nodes to mysqlping"
+	   exit $OCF_ERR_CONFIGURED
     fi
 
     #check_binary ping
@@ -221,36 +207,38 @@ mysqlping_validate() {
 
 mysqlping_update() {
     active=0
+    
     for host in $OCF_RESKEY_host_list; do
-	p_exe="/usr/bin/mysqladmin ping"
+	   p_exe="/usr/bin/mysqladmin ping"
 
-	case `uname` in
-	    Linux) p_args=" -h ${host} --user=$OCF_RESKEY_user  --password=$OCF_RESKEY_password --connect_timeout=$OCF_RESKEY_timeout";; 
-	    *) ocf_log err "Unknown host type: `uname`"; exit $OCF_ERR_INSTALLED;;
-	esac
+    	case `uname` in
+	       Linux) p_args=" -h ${host} --user=$OCF_RESKEY_user  --password=$OCF_RESKEY_password --connect_timeout=$OCF_RESKEY_timeout";; 
+	        *) ocf_log err "Unknown host type: `uname`"; exit $OCF_ERR_INSTALLED;;
+        esac
 
-	#TODO ipv6
-	#case $host in
-	#    *:*) p_exe=ping6
-	#esac
-	
-	p_out=`$p_exe $p_args  $OCF_RESKEY_options >/dev/null 2>&1`; rc=$?
+    	#TODO ipv6
+    	#case $host in
+    	#    *:*) p_exe=ping6
+    	#esac
+    	
+	   p_out=`$p_exe $p_args  $OCF_RESKEY_options >/dev/null 2>&1`; rc=$?
 
-	case $rc in
-	    0) active=`expr $active + 1`;;
-	    1) mysqlping_conditional_log warn "Mysql on the $host is inactive: $p_out";;
-	    *) ocf_log err "Unexpected result for Mysql on the '$p_exe $p_args $OCF_RESKEY_options $host' $rc: $p_out";;
-	esac
+    	case $rc in
+    	    0) active=`expr $active + 1`;;
+    	    1) mysqlping_conditional_log warn "Mysql on the $host is inactive: $p_out";;
+    	    *) ocf_log err "Unexpected result for Mysql on the '$p_exe $p_args $OCF_RESKEY_options $host' $rc: $p_out";;
+    	esac
+    
     done
+    
     score=`expr $active \* $OCF_RESKEY_multiplier `
-	
 
     attrd_updater -n $OCF_RESKEY_name -v $score -d $OCF_RESKEY_dampen $attrd_options
-
     rc=$?
+    
     case $rc in 
-	0) mysqlping_conditional_log debug "Updated $OCF_RESKEY_name = $score" ;;
-	*) ocf_log warn "Could not update $OCF_RESKEY_name = $score: rc=$rc";;
+	   0) mysqlping_conditional_log debug "Updated $OCF_RESKEY_name = $score" ;;
+	   *) ocf_log warn "Could not update $OCF_RESKEY_name = $score: rc=$rc";;
     esac
 
     return $rc
@@ -292,19 +280,25 @@ fi
 
 
 case $__OCF_ACTION in
-meta-data)	meta_data
-		exit $OCF_SUCCESS
-		;;
-start)		mysqlping_start;;
-stop)		mysqlping_stop;;
-monitor)	mysqlping_monitor;;
-reload)		mysqlping_start;;
-validate-all)	mysqlping_validate;;
-usage|help)	mysqlping_usage
-		exit $OCF_SUCCESS
-		;;
-*)		mysqlping_usage
-		exit $OCF_ERR_UNIMPLEMENTED
-		;;
+meta-data)      meta_data
+                exit $OCF_SUCCESS
+                ;;
+start)		    mysqlping_start
+                ;;
+stop)		    mysqlping_stop
+                ;;
+monitor)	    mysqlping_monitor
+                ;;
+reload)		    mysqlping_start
+                ;;
+validate-all)	mysqlping_validate
+                ;;
+usage|help)	    mysqlping_usage
+		        exit $OCF_SUCCESS
+		        ;;
+*)		        mysqlping_usage
+		        exit $OCF_ERR_UNIMPLEMENTED
+		      ;;
 esac
+
 exit $?

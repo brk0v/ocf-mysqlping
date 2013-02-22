@@ -1,49 +1,51 @@
-Pacemaker OCF cluster resource that pings mysql nodes
-Same as ping or pingd  OCF resources
+Pacemaker OCF cluster resource that pings MySQL nodes
+Same as ping or pingd OCF resources
 
-Useful in Master-Master Mysql cluster HA for grouping Mysql VIP with working Mysql Server
- ______________
-|              |
-| Mysql Master |---
-|______________|   | 
- ___ | _ | ____    | Mysql VIP (moving on Mysql crushes, or other reason)
-|              |   |
-| Mysql Master |<--
-|______________|
+Useful in case of Master-Master MySQL replication setup for HA for grouping MySQL with VIP on an alive MySQL instance.
+         ______________
+        |              |
+        | MySQL Master |__
+        |______________|  | 
+              |   ^       |
+  Replication |   |       | VIP (moving when MySQL/node failures)
+         _____V___|____   |
+        |              |  |
+        | MySQL Master |<–
+        |______________|
 
 Resource uses `mysqladmin ping` command.
 
 == Example ==
 
-We  have 2 node cluster with master-master replication. It was setuped like clone resource. So we can't use group or collocation for grouping VIP with working instant. 
+We  have 2 node cluster with master-master replication. 
 
 = Install resource management script
 
 cd /usr/lib/ocf/resource.d
-mkdir mysql; cd mage
-wget mysqlping # get resource
+mkdir mysql; cd mysql
+wget https://raw.github.com/Sov1et/ocf-mysqlping/master/mysqlping -O  mysqlping # get resource
 chmod +x ./mysqlping
 
 = Configure mysqlping resource
 
 crm configure
-primitive P_MYSQLPING ocf:mysql:mysqlping params dampen=7s host_list="localhost" user="cacti" password="password multiplier=222 timeout="20" op monitor interval=5s timeout="30s"
+primitive P_MYSQLPING ocf:mysql:mysqlping params dampen=7s host_list="localhost" user="test" password="password multiplier=222 timeout="20" op monitor interval=5s timeout="30s"
 clone CL_MYSQLPING P_MYSQLPING meta globally-unique="false"
-location L_MYSQLPING_01 CL_MYSQLPING 100: first_master_node
-location L_MYSQLPING_02 CL_MYSQLPING 100: second_master_node
+location L_MYSQLPING_01 CL_MYSQLPING 100: first_master_node.local
+location L_MYSQLPING_02 CL_MYSQLPING 100: second_master_node.local
 property default-resource-stickiness=100
 commit
 
-= Configure default location for the Mysql VIP
+= Configure default location for the MySQL VIP
 
 crm configure
 primitive P_MYSQL_IP ocf:heartbeat:IPaddr2 params ip="192.168.56.163" nic="eth0" op monitor interval="5s"
-location L_MYSQL_IP_01 P_MYSQL_IP 100: first_master_node
-location L_MYSQL_IP_02 P_MYSQL_IP 10: second_master_node
+location L_MYSQL_IP_01 P_MYSQL_IP 100: first_master_node.local
+location L_MYSQL_IP_02 P_MYSQL_IP 10: second_master_node.local
 commit
 
-= Configure VIP for mysqlping
-
+= Configure VIP collocation with mysqlping score
+ 
 crm configure
 location L_MYSQLPING_IP P_MYSQL_IP rule mysqlping: defined mysqlping
 commit
