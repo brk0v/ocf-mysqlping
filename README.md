@@ -2,30 +2,32 @@ Pacemaker OCF cluster resource that pings MySQL nodes
 Same as ping or pingd OCF resources
 
 Useful in case of Master-Master MySQL replication setup for HA for grouping MySQL with VIP on an alive MySQL instance.
-         ______________
-        |              |
-        | MySQL Master |__
-        |______________|  | 
-              |   ^       |
-  Replication |   |       | VIP (moving when MySQL/node failures)
-         _____V___|____   |
-        |              |  |
-        | MySQL Master |<–
-        |______________|
 
-Resource uses `mysqladmin ping` command.
+           ______________
+          |              |
+          | MySQL Master |__
+          |______________|  | 
+                |   |       |
+                |   | Repl  | VIP (moving when MySQL/node failures)
+           _____V___|____   |
+          |              |  |
+          | MySQL Master |<–
+          |______________|
+
+Resource uses "mysqladmin ping" command.
 
 Example
 =======
 
 We  have 2 node cluster with master-master replication. 
 
-= Install resource management script
+Install resource script
+----------------------------------
 
-cd /usr/lib/ocf/resource.d
-mkdir mysql; cd mysql
-wget https://raw.github.com/Sov1et/ocf-mysqlping/master/mysqlping -O  mysqlping # get resource
-chmod +x ./mysqlping
+    cd /usr/lib/ocf/resource.d
+    mkdir mysql; cd mysql
+    wget https://raw.github.com/Sov1et/ocf-mysqlping/master/mysqlping -O  mysqlping # get resource
+    chmod +x ./mysqlping
 
 Configure mysqlping resource
 ----------------------------
